@@ -1,0 +1,15 @@
+.mdc-dialog__surface {
+  z-index: 999 !important;
+}
+.AntdUploadCustom {
+  width: 100%;
+  .ant-upload {
+    width: 100%;
+  }
+  .ant-upload-select {
+    width: 100% !important;
+  }
+  .upload-list-inline {
+    width: 100%;
+  }
+}
