@@ -20,7 +20,7 @@ export default function Input({ fn }) {
     const message = {
       action: "send",
       message: inpRef.current.value,
-      sender: "Chandra Moulii",
+      sender: "Sender name",
       sender_id: Number.parseInt(readUserId()),
       project_id: Number.parseInt(readSelectedProjectId()) || 100,
       institute_id: Number.parseInt(getInstituteId()),

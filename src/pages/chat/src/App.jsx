@@ -15,9 +15,7 @@ import { Spin } from "antd";
 import apiServices from "../../../services/exportService";
 import { apiEndpoints } from "../../../utils/apiEndPoints";
 
-const url = `wss://dchat.pezala.in/ws/chat/?team_id=82&token="${readToken()}"`;
 let socket;
-
 export default function Chat() {
   const btnRef = useRef();
   const listRef = useRef(null);
@@ -27,8 +25,14 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(true);
   const [connected, setConnected] = useState(false);
   const [teams, setTeams] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(null);
 
-  function connectToSocket() {
+  function connectToSocket(selectedTeam) {
+    if (socketRef.current) {
+      socket.close();
+      setConnected(false);
+    }
+    const url = `wss://dchat.pezala.in/ws/chat/?team_id=${selectedTeam}&token="${readToken()}"`;
     socket = new WebSocket(url);
     socket.onopen = function () {
       setIsLoading(false);
@@ -71,10 +75,6 @@ export default function Chat() {
       setConnected(false);
       console.log("Disconnected from the WebSocket server");
     };
-  }
-
-  function reconnectToSocket() {
-    connectToSocket();
   }
 
   function sendMessage(message) {
@@ -123,7 +123,7 @@ export default function Chat() {
   }
 
   useEffect(() => {
-    connectToSocket();
+    fetchTeamDetails();
     return () => {
       if (!socketRef.current) {
         socket.close();
@@ -136,16 +136,22 @@ export default function Chat() {
   }, [messages]);
 
   useEffect(() => {
-    fetchTeamDetails();
-  }, []);
+    if (teams.length !== 0) {
+      setSelectedTeam(() => {
+        return { teamId: teams[0].TEAMID, teamName: teams[0].TeamName };
+      });
+      connectToSocket(teams[0].TEAMID);
+    }
+  }, [teams]);
 
-  if (!connected)
-    return (
-      <div className="p-4 h-screen w-screen grid place-items-center">
-        <Spin>{"Loading..."}</Spin>
-      </div>
-    );
+  useEffect(() => {
+    if (selectedTeam) {
+      connectToSocket(selectedTeam.teamId);
+    }
+  }, [selectedTeam]);
+
   if (!data) return;
+  if (!teams) return;
 
   return (
     <div className="bg-gray-200 h-screen flex divide-x-2">
@@ -154,43 +160,57 @@ export default function Chat() {
       ) : (
         <>
           <div className="basis-[330px] __charts shadow grow-0 relative overflow-hidden shrink-0 bg-white h-full">
-            {!connected ? (
+            {/* {!connected ? (
               <div className="bg-red-100 absolute bottom-0 w-full px-4 py-2 space-y-1">
                 <div className="flex items-center justify-center text-red-600 gap-3 font-medium">
                   <p>Disconnected !!</p>
                 </div>
                 <div className="text-sm text-center font-medium">
-                  <button className="underline" onClick={reconnectToSocket}>
+                  <button
+                    className="underline"
+                    onClick={() => connectToSocket(selectedTeam)}
+                  >
                     Reconnect
                   </button>
                 </div>
               </div>
-            ) : null}
-            <Chats data={data} />
+            ) : null} */}
+            <Chats data={data} teams={teams} fn={setSelectedTeam} />
           </div>
-          <div className="bg-white flex-grow flex flex-col">
-            {/* Header */}
-            <div>
-              <Header data={data} />
+          {!connected ? (
+            <div className="p-4 h-screen w-screen grid place-items-center bg-white">
+              <Spin>{"Loading..."}</Spin>
             </div>
-            {/* Message List */}
-            <div
-              ref={listRef}
-              onScroll={handleScroll}
-              className="flex-grow overflow-y-auto py-5 relative __messages_list"
-            >
-              <Messages data={messages} socket={socket} />
-              <button
-                ref={btnRef}
-                onClick={scrollIntoView}
-                className="sticky bottom-0 left-1/2 -translate-x-1/2 focus-visible:ring rounded-full text-neutral-700 hidden"
+          ) : (
+            <div className="bg-white flex-grow flex flex-col">
+              {/* Header */}
+              <div>
+                <Header data={data} selectedTeam={selectedTeam} />
+              </div>
+              {/* Message List */}
+              <div
+                ref={listRef}
+                onScroll={handleScroll}
+                className="flex-grow overflow-y-auto py-5 relative __messages_list"
               >
-                <ChevronDown />
-              </button>
+                <Messages
+                  data={messages}
+                  socket={socket}
+                  reconnect={connectToSocket}
+                  selectedTeam={selectedTeam}
+                />
+                <button
+                  ref={btnRef}
+                  onClick={scrollIntoView}
+                  className="sticky bottom-0 left-1/2 -translate-x-1/2 focus-visible:ring rounded-full text-neutral-700 hidden"
+                >
+                  <ChevronDown />
+                </button>
+              </div>
+              {/* Input */}
+              <Input fn={sendMessage} />
             </div>
-            {/* Input */}
-            <Input fn={sendMessage} />
-          </div>
+          )}
         </>
       )}
     </div>

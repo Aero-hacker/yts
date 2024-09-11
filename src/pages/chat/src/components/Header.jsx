@@ -2,7 +2,7 @@
 import { Info } from "lucide-react";
 import { Avatar, Navbar } from "react-chat-elements";
 
-export default function Header({ data }) {
+export default function Header({ data, selectedTeam }) {
   return (
     <div className="__header">
       <header>
@@ -11,14 +11,14 @@ export default function Header({ data }) {
           left={
             <div className="flex gap-3 items-center">
               <Avatar
-                src={`${`https://placehold.co/600x400/ccc/444?text=${data.team_name
+                src={`${`https://placehold.co/600x400/ccc/444?text=${selectedTeam.teamName
                   .substr(0, 2)
                   .toUpperCase()}`}`}
                 alt={"logo"}
                 size="medium"
                 type="circle flexible"
               />
-              <p className="font-medium text-lg">{data.team_name}</p>
+              <p className="font-medium text-lg">{selectedTeam.teamName}</p>
             </div>
           }
           right={
